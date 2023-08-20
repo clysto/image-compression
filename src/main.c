@@ -6,7 +6,7 @@
 #include "fifo.h"
 #include "img.h"
 
-#define BUFFER_SIZE 512
+#define BUFFER_SIZE 1024
 uint8_t BUFFER[BUFFER_SIZE] = {0};
 uint8_t IMGDATA[256 * 8];
 
@@ -36,12 +36,12 @@ void uart_fifo_send(FIFO *fifo) {
     }
 }
 
-void encode_image() {
+void encode_image(uint8_t qfactor) {
     uint8_t block[64];
     FIFO fifo;
     Image img;
     FIFO_init(&fifo, BUFFER, BUFFER_SIZE);
-    IMG_init(&img, 256, 256);
+    IMG_init(&img, 256, 256, qfactor);
     IMG_encodeHeader(&img, &fifo);
     for (int l = 0; l < 256 / 8; l++) {
         uart_recv(IMGDATA, 256 * 8);
@@ -54,21 +54,25 @@ void encode_image() {
                 IMG_encodeBlock(&img, block, &fifo);
             }
         }
+        if (l == 255 / 8) {
+            IMG_encodeComplete(&img, &fifo);
+        }
         uart_fifo_send(&fifo);
         led_off(LEDS, 1);
     }
-    IMG_encodeComplete(&img, &fifo);
-    uart_fifo_send(&fifo);
 }
 
 void main(void) {
-    char cmd;
+    uint8_t cmd;
     while (true) {
         uart_recv(&cmd, 1);
         switch (cmd) {
+            case 0x00:
             case 0x01:
+            case 0x02:
+            case 0x03:
                 led_on(LEDS, 0);
-                encode_image();
+                encode_image(cmd);
                 led_off(LEDS, 0);
                 break;
             default:

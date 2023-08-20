@@ -52,9 +52,25 @@ while True:
         continue
     if str.startswith(s, "encode "):
         args = s.split(" ")
-        if len(args) != 3:
-            print("Usage: encode <input_file> <output_file>")
+        if len(args) < 3:
+            print("Usage: encode <input_file> <output_file> [qfactor]")
             continue
+        if len(args) == 4:
+            qfactor = args[3].strip()
+            if qfactor == "best":
+                qfactor = 0
+            elif qfactor == "high":
+                qfactor = 1
+            elif qfactor == "med":
+                qfactor = 2
+            elif qfactor == "low":
+                qfactor = 3
+            else:
+                print("Error: invalid qfactor")
+                continue
+        else:
+            # default: low quality
+            qfactor = 3
         input_file = args[1].strip()
         output_file = args[2].strip()
         try:
@@ -63,12 +79,11 @@ while True:
         except:
             print("Error: file not found")
             continue
-        client.write(b"\x01")
+        client.write(bytes([qfactor]))
         time.sleep(0.1)
         data_out = b""
         for i in range(256 // 8):
             client.write(data[i * 8 * 256 : i * 8 * 256 + 256 * 8])
             data_out += read_frame(client)
-        data_out += read_frame(client)
         with open(output_file, "wb") as f:
             f.write(data_out)
