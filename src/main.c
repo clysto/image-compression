@@ -6,7 +6,7 @@
 #include "fifo.h"
 #include "img.h"
 
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 2048
 uint8_t BUFFER[BUFFER_SIZE] = {0};
 uint8_t IMGDATA[256 * 8];
 
